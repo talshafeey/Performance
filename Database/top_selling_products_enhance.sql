@@ -1,3 +1,10 @@
+-- API: dashboard/topSellingProducts?fromDate=1970-01-01+00:00:00&toDate=2025-12-30+23:59:59&storeId=&regionId=&legalEntityId=1&companyId=1&tenantId=1
+-- REPO: dashboard-api
+-- RELATIVE PATH AT REPO FOR EXECUTOR CODE: src/modules/dashboard/dashboard-v2-service.ts
+-- METHOD: topSellingProducts
+-- OLD_TIME FOR ALL DATA: 26-35s
+-- NEW_TIME FOR ALL DATA: 3-5s
+
 -- OLD QUERY --
 -- EXPLAIN (ANALYZE, BUFFERS)
 SELECT -- 625-700 ms
@@ -92,21 +99,3 @@ GROUP BY
 ORDER BY amount DESC 
 LIMIT 5;
 
-	SELECT
-    id,
-    name,
-    "altName",
-    code,
-    "productImage",
-    "productHexCode",
-    amount,
-    qty
-FROM v_product_sales_enriched
-WHERE company_id = 1
-  AND tenant_id = 1
-  AND legal_entity_id = 1
-  AND invoice_date_time BETWEEN
-      TIMESTAMP '2025-10-01 00:00:00'
-      AND TIMESTAMP '2025-12-30 23:59:59'
-ORDER BY amount DESC
-LIMIT 5;
