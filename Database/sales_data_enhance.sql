@@ -29,40 +29,6 @@ WHERE s.payment_status IS NOT NULL
 
 
 
-
- ----- VIEW FOR SCRIPT -----------
-
- CREATE OR REPLACE VIEW view_dashboard_sales_summary AS
-SELECT 
-    s.company_id,
-    s.tenant_id,
-    s.legal_entity_id,
-    s.store_id,
-    s.invoice_date_time AS event_date,
-    s.payment_status,
-    -- Positive raw values
-    CASE WHEN s.invoice_type = 'SALES' THEN s.net_amount ELSE 0 END AS sale_amount,
-    CASE WHEN s.invoice_type = 'RETURNS' THEN s.net_amount ELSE 0 END AS return_amount,
-    -- Net values (Sales minus Returns)
-    CASE 
-        WHEN s.invoice_type = 'SALES' THEN s.net_amount 
-        WHEN s.invoice_type = 'RETURNS' THEN -s.net_amount 
-        ELSE 0 
-    END AS net_amount,
-    CASE 
-        WHEN s.invoice_type = 'SALES' THEN s.total_discount 
-        WHEN s.invoice_type = 'RETURNS' THEN -s.total_discount 
-        ELSE 0 
-    END AS net_discount,
-    CASE 
-        WHEN s.invoice_type = 'SALES' THEN s.tax 
-        WHEN s.invoice_type = 'RETURNS' THEN -s.tax 
-        ELSE 0 
-    END AS net_tax,
-    -- For unique order counting
-    CASE WHEN s.invoice_type = 'SALES' THEN s.id ELSE NULL END AS sale_order_id
-FROM sales_invoice_header s;
-
 -- drop view view_sales_invoice_analytics;
 CREATE OR REPLACE VIEW view_sales_invoice_analytics AS
 SELECT 
@@ -89,23 +55,6 @@ SELECT
         ELSE 0 
     END AS effective_discount
 FROM sales_invoice_header s;
-
--- drop view view_dashboard_master_analytics;
-CREATE OR REPLACE VIEW view_dashboard_master_analytics AS
-SELECT 
-    company_id, tenant_id, legal_entity_id, store_id, event_date, payment_status,
-    sale_amount, return_amount, net_amount, net_discount, net_tax, sale_order_id,
-    0 AS lost_sale_amount
-FROM view_dashboard_sales_summary
-
-UNION ALL
-
-SELECT 
-    company_id, tenant_id, legal_entity_id, store_id, event_date, 'PAID' as payment_status,
-    0, 0, 0, 0, 0, NULL,
-    lost_sale_amount
-FROM view_dashboard_lost_sales;
-
 
 CREATE OR REPLACE VIEW view_dashboard_lost_sales AS
 SELECT 

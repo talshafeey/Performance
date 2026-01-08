@@ -205,3 +205,111 @@ SELECT
     payment_status,
     transaction_status
 FROM ranked_payments;
+
+
+select * from view_dashboard_master_analytics;
+
+SELECT
+	SUM(V.SALE_AMOUNT) AS "totalSales",
+	SUM(V.RETURN_AMOUNT) AS "totalReturns",
+	SUM(V.NET_AMOUNT) AS "netSales",
+	SUM(V.NET_DISCOUNT) AS "totalDiscount",
+	SUM(V.NET_TAX) AS "tax",
+	COUNT(DISTINCT V.SALE_ORDER_ID) AS "orders",
+	COUNT(DISTINCT V.STORE_ID) AS "activeStores",
+	SUM(V.LOST_SALE_AMOUNT) AS "lostSaledata"
+FROM
+	"view_dashboard_master_analytics" "v"
+WHERE
+	V.EVENT_DATE BETWEEN '2025-11-30 21:00:00' AND '2025-12-31 20:59:59'
+	AND V.PAYMENT_STATUS IS NOT NULL
+	AND V.COMPANY_ID IN (1)
+	AND V.COMPANY_ID IN (1)
+	AND V.TENANT_ID IN (1)
+	AND V.LEGAL_ENTITY_ID IN (1,282,123,330,109,182,144,155)
+	AND V.STORE_ID IN (79);
+	-- ["2025-11-30 21:00:00","2025-12-31 20:59:59",1,1,1,1,282,123,330,109,182,144,155]
+
+	SELECT
+	SUM(V.SALE_AMOUNT) AS "totalSales",
+	SUM(V.RETURN_AMOUNT) AS "totalReturns",
+	SUM(V.NET_AMOUNT) AS "netSales",
+	SUM(V.NET_DISCOUNT) AS "totalDiscount",
+	SUM(V.NET_TAX) AS "tax",
+	COUNT(DISTINCT V.SALE_ORDER_ID) AS "orders",
+	COUNT(DISTINCT V.STORE_ID) AS "activeStores",
+	SUM(V.LOST_SALE_AMOUNT) AS "lostSaledata"
+FROM
+	"view_dashboard_master_analytics" "v"
+WHERE
+	V.EVENT_DATE BETWEEN '2024-11-30 21:00:00' AND '2024-12-31 20:59:59'
+	AND V.PAYMENT_STATUS IS NOT NULL
+	AND V.COMPANY_ID IN (1)
+	AND V.COMPANY_ID IN (1)
+	AND V.TENANT_ID IN (1)
+	AND V.LEGAL_ENTITY_ID IN (1,282,123,330,109,182,144,155)
+	AND V.STORE_ID IN (79);
+	-- PARAMETERS: ["2024-11-30 21:00:00","2024-12-31 20:59:59",1,1,1,1,282,123,330,109,182,144,155,79]
+
+
+
+
+SELECT 
+    SUM(
+        CASE 
+            WHEN invoice_type = 'SALES' THEN (net_amount + COALESCE(tax, 0))
+            WHEN invoice_type = 'RETURNS' THEN -(net_amount + COALESCE(tax, 0))
+            ELSE 0 
+        END
+    ) AS total_sales
+FROM sales_invoice_header
+WHERE payment_status IS NOT NULL
+  AND invoice_date_time BETWEEN '2025-12-01 00:00:00' AND '2025-12-31 23:59:59'
+  AND store_id = 79;
+
+
+SELECT 
+    SUM(CASE WHEN invoice_type = 'SALES' THEN (net_amount + COALESCE(tax, 0)) ELSE 0 END) AS gross_sales,
+    SUM(CASE WHEN invoice_type = 'RETURNS' THEN (net_amount + COALESCE(tax, 0)) ELSE 0 END) AS total_returns,
+    SUM(
+        CASE 
+            WHEN invoice_type = 'SALES' THEN (net_amount + COALESCE(tax, 0))
+            WHEN invoice_type = 'RETURNS' THEN -(net_amount + COALESCE(tax, 0))
+            ELSE 0 
+        END
+    ) AS net_sales
+FROM sales_invoice_header
+WHERE payment_status IS NOT NULL
+  AND invoice_date_time BETWEEN '2025-12-01 00:00:00' AND '2025-12-31 23:59:59'
+  AND store_id = 79;
+
+
+  SELECT 
+    SUM(pt.amount) - SUM(DISTINCT h.change_amount) AS total_cash_collected
+FROM payment_transactions pt
+INNER JOIN sales_invoice_header h ON pt.sales_invoice_header_id = h.id
+WHERE pt.payment_method_type = 'CASH'
+  AND pt.transaction_status = 'PAID'
+  AND h.invoice_date_time BETWEEN '2025-12-01 00:00:00' AND '2025-12-31 23:59:59'
+  AND h.store_id = 79;
+
+
+  SELECT 
+    -- 1. Cash (Total Cash Payments minus Change Given)
+    SUM(CASE WHEN pt.payment_method_type = 'CASH' THEN pt.amount ELSE 0 END) 
+      - SUM(DISTINCT h.change_amount) AS net_cash_amount,
+
+    -- 2. Cards (Visa, MasterCard, MADA, etc.)
+    SUM(CASE WHEN pt.payment_method_type = 'CARD' THEN pt.amount ELSE 0 END) AS card_amount,
+
+    -- 3. Everything Else (Bank Transfer, On Account, etc.)
+    SUM(CASE WHEN pt.payment_method_type NOT IN ('CASH', 'CARD') THEN pt.amount ELSE 0 END) AS other_amount,
+
+    -- 4. Grand Total
+    SUM(pt.amount) - SUM(DISTINCT h.change_amount) AS total_collected
+FROM payment_transactions pt
+INNER JOIN sales_invoice_header h ON pt.sales_invoice_header_id = h.id
+WHERE pt.transaction_status = 'PAID'
+  AND h.invoice_date_time BETWEEN '2025-12-01 00:00:00' AND '2025-12-31 23:59:59'
+  AND h.store_id = 79;
+
