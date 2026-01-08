@@ -108,6 +108,7 @@ ORDER BY amount DESC;
 
 --------- VIEW SCRIPT ------------
 
+-- drop view view_sales_by_payment_performance;
 CREATE OR REPLACE VIEW view_sales_by_payment_performance AS
 SELECT
     -- Final display name (Sub-payment name for cards, or main method name)
@@ -128,7 +129,8 @@ SELECT
         THEN pt.amount - COALESCE(s.change_amount, 0)
         ELSE pt.amount
     END) AS amount,
-    -- Filter columns for your ORM's .where() clause
+    -- Filter columns for your ORM's .where() clause.
+	s.store_id,
     s.invoice_date_time,
     s.company_id,
     s.tenant_id,

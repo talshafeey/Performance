@@ -53,10 +53,11 @@ CREATE OR REPLACE VIEW v_product_sales_enriched AS
 SELECT
     p.id AS product_id,
     p.short_name AS name,
-    p.alt_short_name AS "altName",
+    p.alt_short_name AS altName,
     p.code,
-    p.image AS "productImage",
-    p.hex_code AS "productHexCode",
+    p.image AS productImage,
+    p.hex_code AS productHexCode,
+	s.store_id, 
     s.invoice_date_time,
     s.company_id,
     s.tenant_id,
@@ -73,7 +74,7 @@ FROM sales_invoice_header s
 INNER JOIN sales_invoice_lines sil ON sil.invoice_id = s.id
 INNER JOIN prd_products p ON sil.product_id = p.id
 WHERE s.invoice_type IN ('SALES', 'RETURNS')
-  AND p.product_classification = 'STANDARD_PRODUCT';
+  AND p.product_classification = 'SERVICE_PRODUCT';
 
 
 -- SAMPLE QUERY FOR THE NEW VIEW -- 
@@ -98,4 +99,21 @@ GROUP BY
     product_id, name, "altName", code, "productImage", "productHexCode"
 ORDER BY amount DESC 
 LIMIT 5;
+
+
+
+SELECT v.product_id AS "id", 
+v.name AS "name", v.altName AS "altName",
+v.code AS "code", v.productImage AS "productImage", 
+v.productHexCode AS "productHexCode", 
+ROUND(SUM(v.net_amount)::DECIMAL, 2)::FLOAT AS "amount", 
+SUM(v.quantity) AS "qty" 
+FROM "v_product_sales_enriched" "v" 
+WHERE v.invoice_date_time 
+BETWEEN '1969-12-31 21:00:00' AND '2025-12-30 20:59:59' AND v.payment_status IS NOT NULL AND
+v.company_id IN (1) AND v.company_id IN (1) AND
+v.tenant_id IN (1) AND v.legal_entity_id IN (1) GROUP BY
+v.product_id, v.name, v.altName, v.code, v.productImage, 
+v.productHexCode ORDER BY amount DESC LIMIT 5; -- PARAMETERS: ["1969-12-31 21:00:00","2025-12-30 20:59:59",1,1,1,1]
+
 
