@@ -63,6 +63,7 @@ SELECT
     s.tenant_id,
     s.legal_entity_id,
     s.payment_status,
+    s.customer_id,
     -- Calculate raw amounts here so we can sum them in the final query
     CASE
         WHEN s.invoice_type = 'SALES' THEN sil.net_amount
@@ -81,10 +82,10 @@ WHERE s.invoice_type IN ('SALES', 'RETURNS')
   SELECT 
     product_id AS id,
     name,
-    "altName",
+    altName,
     code,
-    "productImage",
-    "productHexCode",
+    productImage,
+    productHexCode,
     ROUND(SUM(net_amount)::DECIMAL, 2)::FLOAT AS amount,
     SUM(quantity) AS qty
 FROM v_product_sales_enriched
@@ -96,7 +97,7 @@ WHERE payment_status IS NOT NULL
       TIMESTAMP '2021-10-01 00:00:00'
       AND TIMESTAMP '2025-12-30 23:59:59'
 GROUP BY 
-    product_id, name, "altName", code, "productImage", "productHexCode"
+    product_id, name, altName, code, productImage, productHexCode
 ORDER BY amount DESC 
 LIMIT 5;
 

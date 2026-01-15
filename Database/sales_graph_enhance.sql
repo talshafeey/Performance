@@ -61,6 +61,7 @@ SELECT
     s.tenant_id,
     s.legal_entity_id,
     s.store_id,
+    s.customer_id,
     s.invoice_date_time,
     -- Truncate to month for grouping
     DATE_TRUNC('month', s.invoice_date_time) AS "month_date",

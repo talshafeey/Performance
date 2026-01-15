@@ -41,6 +41,7 @@ SELECT
     pc.name AS category_name,
     pc.alt_name AS category_alt_name,
     s.store_id,
+    s.customer_id,
     s.invoice_date_time,
     s.payment_status,
     s.company_id,

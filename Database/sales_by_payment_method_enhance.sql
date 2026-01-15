@@ -131,6 +131,7 @@ SELECT
     END) AS amount,
     -- Filter columns for your ORM's .where() clause.
 	s.store_id,
+    s.customer_id,
     s.invoice_date_time,
     s.company_id,
     s.tenant_id,

@@ -17,6 +17,7 @@ SELECT
     s.tenant_id,
     s.legal_entity_id,
     s.payment_status,
+    s.customer_id,
     -- Calculate raw amounts here so we can sum them in the final query
     CASE
         WHEN s.invoice_type = 'SALES' THEN sil.net_amount
@@ -36,6 +37,7 @@ SELECT
     s.tenant_id,
     s.legal_entity_id,
     s.store_id,
+    s.customer_id,
     s.invoice_date_time,
     -- Truncate to month for grouping
     DATE_TRUNC('month', s.invoice_date_time) AS "month_date",
@@ -59,6 +61,7 @@ SELECT
     s.company_id,
     s.tenant_id,
     s.legal_entity_id,
+    s.customer_id,
     s.invoice_date_time,
     s.payment_status,
     s.net_amount, -- Added the raw column back for the CASE statements
@@ -85,6 +88,7 @@ SELECT
     tenant_id,
     legal_entity_id,
     store_id
+    -- TODO: Add customer_id if available from sales_order_header
 FROM sales_order_header
 WHERE order_type = 'LOST_SALES';
 
@@ -117,6 +121,7 @@ SELECT
     pc.name AS category_name,
     pc.alt_name AS category_alt_name,
     s.store_id,
+    s.customer_id,
     s.invoice_date_time,
     s.payment_status,
     s.company_id,
@@ -266,3 +271,39 @@ ON sales_invoice_header (tenant_id, company_id, legal_entity_id, invoice_date_ti
 
 CREATE INDEX idx_payment_transactions_header 
 ON payment_transactions (sales_invoice_header_id, transaction_status);
+
+-- Feature Flags Table and Related Objects
+
+CREATE TABLE IF NOT EXISTS feature_flags (
+    id SERIAL PRIMARY KEY,
+    feature_name VARCHAR(100) UNIQUE NOT NULL,
+    enabled BOOLEAN DEFAULT false NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create index for fast lookups
+CREATE INDEX IF NOT EXISTS idx_feature_flags_name ON feature_flags(feature_name);
+
+-- Insert default feature flags
+INSERT INTO feature_flags (feature_name, enabled, description) 
+VALUES 
+    ('dashboard_v2_enabled', true, 'Enable optimized V2 dashboard methods (views & parallel queries)')
+ON CONFLICT (feature_name) DO NOTHING;
+
+-- Function to update timestamp on modification
+CREATE OR REPLACE FUNCTION update_feature_flag_timestamp()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger to auto-update timestamp
+DROP TRIGGER IF EXISTS trigger_update_feature_flag_timestamp ON feature_flags;
+CREATE TRIGGER trigger_update_feature_flag_timestamp
+    BEFORE UPDATE ON feature_flags
+    FOR EACH ROW
+    EXECUTE FUNCTION update_feature_flag_timestamp();

@@ -38,6 +38,7 @@ SELECT
     s.company_id,
     s.tenant_id,
     s.legal_entity_id,
+    s.customer_id,
     s.invoice_date_time,
     s.payment_status,
     s.net_amount, -- Added the raw column back for the CASE statements
@@ -64,6 +65,7 @@ SELECT
     tenant_id,
     legal_entity_id,
     store_id
+    -- TODO: Add customer_id if available from sales_order_header
 FROM sales_order_header
 WHERE order_type = 'LOST_SALES';
 
